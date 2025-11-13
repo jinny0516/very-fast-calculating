@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>초고난도 확장판 암산 퀴즈</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #6a0571; /* 보라색 계열 */
+            --secondary-color: #ab2a9c; /* 약간 밝은 보라색 */
+            --accent-color: #ff6f61; /* 강조색 (주황-빨강) */
+            --text-color: #333;
+            --light-bg: #f9f7fb;
+            --dark-bg: #e0e0e0; /* 연한 회색 배경 */
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #007bff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f0f4f8, #d9e2ec); /* 부드러운 그라데이션 배경 */
+            transition: background-color 0.2s ease-in-out;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        /* 🚨 깜빡임 경고 CSS 클래스 */
+        .flash-warning {
+            background-color: #ffe0e0 !important; /* 밝은 빨강으로 깜빡임 */
+        }
+
+        .quiz-container {
+            width: 90%;
+            max-width: 500px; /* 최대 너비 증가 */
+            text-align: center;
+            background: var(--card-bg);
+            padding: 45px; /* 패딩 증가 */
+            border-radius: 20px; /* 더 둥근 모서리 */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* 더 깊은 그림자 */
+            z-index: 10;
+            position: relative;
+            overflow: hidden; /* 요소 밖으로 넘치는 그림자 방지 */
+        }
+
+        /* 컨테이너 상단에 가상 요소로 강조 라인 추가 */
+        .quiz-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-top: 0;
+            font-size: 2.2em; /* 폰트 크기 증가 */
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .quiz-container > p { /* "5문제 도전!" 설명 문구 스타일 */
+            font-size: 1.05em;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        /* 헤더 (문제, 정답, 시간, 최고기록) */
+        .header {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2열 그리드 */
+            gap: 15px; /* 간격 증가 */
+            margin-bottom: 35px;
+            font-size: 0.95em;
+            font-weight: 600;
+        }
+
+        .header > div {
+            padding: 12px 10px; /* 패딩 증가 */
+            border-radius: 10px; /* 더 둥근 모서리 */
+            display: flex; /* 내부 텍스트 중앙 정렬 */
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* 작은 그림자 */
+        }
+
+        #q-count {
+            background-color: var(--info-color);
+            color: white;
+        }
+
+        #correct-count {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        #q-timer {
+            background-color: var(--warning-color);
+            color: var(--text-color); /* 텍스트 색상 변경 */
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        #high-score {
+            background: linear-gradient(to right, #6f42c1, #a750d8); /* 그라데이션 배경 */
+            color: white;
+            grid-column: 1 / -1; /* 전체 너비 차지 */
+        }
+        
+        #problem {
+            font-size: 4em; /* 문제 폰트 크기 더 키움 */
+            font-weight: 700;
+            margin: 40px 0; /* 여백 증가 */
+            color: var(--primary-color);
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05); /* 텍스트 그림자 */
+        }
+
+        #answer {
+            width: 70%; /* 너비 조정 */
+            padding: 18px; /* 패딩 증가 */
+            font-size: 2em; /* 폰트 크기 증가 */
+            text-align: center;
+            border: 3px solid var(--primary-color); /* 테두리 색상 강조 */
+            border-radius: 12px; /* 더 둥근 모서리 */
+            margin-bottom: 15px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* 내부 그림자 */
+            transition: border-color 0.3s ease-in-out;
+        }
+        #answer:focus {
+            outline: none;
+            border-color: var(--accent-color); /* 포커스 시 강조색 */
+            box-shadow: 0 0 0 3px rgba(255, 111, 97, 0.3); /* 포커스 시 외곽선 그림자 */
+        }
+        
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        #message {
+            margin-top: 25px; /* 여백 증가 */
+            font-size: 1.25em; /* 폰트 크기 증가 */
+            height: 35px; /* 높이 고정 */
+            font-weight: 600;
+        }
+
+        .correct {
+            color: var(--success-color);
+        }
+
+        .wrong {
+            color: var(--danger-color);
+        }
+
+        #startBtn {
+            width: 100%;
+            padding: 20px; /* 패딩 증가 */
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); /* 그라데이션 */
+            color: white;
+            border: none;
+            border-radius: 12px; /* 더 둥근 모서리 */
+            cursor: pointer;
+            font-size: 1.4em; /* 폰트 크기 증가 */
+            font-weight: 600;
+            margin-top: 40px; /* 여백 증가 */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* 입체감 있는 그림자 */
+            transition: all 0.3s ease; /* 부드러운 전환 효과 */
+            letter-spacing: 1px; /* 자간 조정 */
+        }
+
+        #startBtn:hover {
+            transform: translateY(-3px); /* 약간 위로 떠오르는 효과 */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* 그림자 강화 */
+            opacity: 0.9;
+        }
+
+        #startBtn:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>🔥 초고속 암산 도전</h1>
+    <p>사칙연산, 거듭제곱, 제곱근 포함! 10문제 도전!</p>
+
+    <div class="header">
+        <div id="q-count">문제: 0 / 10</div> <div id="correct-count">정답: 0</div>
+        <div id="q-timer">제한: 10초</div>
+        <div id="high-score">최고 기록: 0%</div>
+    </div>
+
+    <div id="problem">시작 버튼을 눌러주세요</div>
+    
+    <input type="number" id="answer" placeholder="정답 입력 후 Enter" disabled>
+    
+    <p id="message"></p>
+
+    <button id="startBtn">도전 시작</button>
+</div>
+
+<script>
+    // DOM 요소
+    const qCountEl = document.getElementById('q-count');
+    const correctCountEl = document.getElementById('correct-count');
+    const qTimerEl = document.getElementById('q-timer');
+    const highScoreEl = document.getElementById('high-score');
+    const problemEl = document.getElementById('problem');
+    const answerInput = document.getElementById('answer');
+    const messageEl = document.getElementById('message');
+    const startBtn = document.getElementById('startBtn');
+
+    // 게임 상태 변수 및 상수
+    const HIGH_SCORE_KEY = 'arithmeticHighScore';
+    let currentQuestion = 0;
+    let correctAnswers = 0;
+    let currentCorrectAnswer = 0;
+    const TOTAL_QUESTIONS = 10; // 🚨 총 문제 수 10으로 변경
+    const OPERATORS = ['+', '-', '×', '÷', '^', '√']; 
+    
+    const TIME_LIMIT_PER_Q = 10; 
+    let questionTimeLeft; 
+    let questionTimerInterval;
+    let flashInterval; 
+
+    // --- 초기화 및 최고 기록 로드 ---
+
+    function loadHighScore() {
+        const storedScore = localStorage.getItem(HIGH_SCORE_KEY) || 0;
+        highScoreEl.textContent = `최고 기록: ${storedScore}%`;
+    }
+
+    loadHighScore();
+
+    function getRandomNumber() {
+        return Math.floor(Math.random() * 900) + 100; // 100 ~ 999
+    }
+    
+    // --- 게임 흐름 제어 ---
+
+    function startGame() {
+        if (questionTimerInterval) {
+            clearInterval(questionTimerInterval);
+        }
+        if (flashInterval) { 
+            clearInterval(flashInterval);
+            document.body.classList.remove('flash-warning');
+        }
+        
+        currentQuestion = 0;
+        correctAnswers = 0;
+        qCountEl.textContent = `문제: 0 / ${TOTAL_QUESTIONS}`;
+        correctCountEl.textContent = "정답: 0";
+        qTimerEl.textContent = `제한: ${TIME_LIMIT_PER_Q}초`;
+        qTimerEl.style.backgroundColor = 'var(--warning-color)'; /* CSS 변수 사용 */
+        messageEl.textContent = "";
+        
+        startBtn.style.display = 'none'; 
+        answerInput.disabled = false;
+        answerInput.value = '';
+        
+        nextQuestion();
+        answerInput.focus();
+    }
+    
+    function startQuestionTimer() {
+        if (questionTimerInterval) {
+            clearInterval(questionTimerInterval);
+        }
+        if (flashInterval) {
+            clearInterval(flashInterval);
+            document.body.classList.remove('flash-warning');
+        }
+        
+        questionTimeLeft = TIME_LIMIT_PER_Q;
+        qTimerEl.textContent = `제한: ${questionTimeLeft}초`;
+        qTimerEl.style.backgroundColor = 'var(--warning-color)'; /* CSS 변수 사용 */
+
+        questionTimerInterval = setInterval(() => {
+            questionTimeLeft--;
+            qTimerEl.textContent = `제한: ${questionTimeLeft}초`;
+            
+            if (questionTimeLeft === 5) {
+                qTimerEl.style.backgroundColor = 'var(--danger-color)'; /* CSS 변수 사용 */
+                
+                flashInterval = setInterval(() => {
+                    document.body.classList.toggle('flash-warning');
+                }, 200); 
+            }
+
+            if (questionTimeLeft <= 3 && questionTimeLeft > 0) { 
+                qTimerEl.style.backgroundColor = 'var(--danger-color)'; /* CSS 변수 사용 */
+            }
+
+            if (questionTimeLeft <= 0) {
+                clearInterval(questionTimerInterval);
+                clearInterval(flashInterval);
+                document.body.classList.remove('flash-warning');
+                handleTimeUp();
+            }
+        }, 1000);
+    }
+
+    function handleTimeUp() {
+        answerInput.disabled = true;
+        messageEl.textContent = `⏰ 시간 초과! (정답: ${currentCorrectAnswer})`;
+        messageEl.className = 'wrong';
+        
+        setTimeout(() => {
+            answerInput.disabled = false;
+            nextQuestion();
+            answerInput.focus();
+        }, 800);
+    }
+    
+    function nextQuestion() {
+        if (currentQuestion >= TOTAL_QUESTIONS) {
+            endGame();
+            return;
+        }
+        
+        currentQuestion++;
+        qCountEl.textContent = `문제: ${currentQuestion} / ${TOTAL_QUESTIONS}`;
+
+        startQuestionTimer(); 
+
+        generateProblem();
+    }
+
+    // --- 문제 생성 함수 ---
+
+    function generateProblem() {
+        let num1, num2, operator, result;
+        
+        // 연산자 비중 조절 (예: 사칙연산 비중을 높이고 특수 연산 비중을 낮춤)
+        const weightedOperators = ['+', '-', '×', '÷', '+', '-', '×', '^', '√']; 
+        operator = weightedOperators[Math.floor(Math.random() * weightedOperators.length)];
+
+        if (operator === '+') {
+            num1 = getRandomNumber();
+            num2 = getRandomNumber();
+            result = num1 + num2;
+            problemEl.textContent = `${num1} + ${num2} =`;
+            
+        } else if (operator === '-') {
+            num1 = getRandomNumber();
+            num2 = getRandomNumber();
+            let temp = Math.max(num1, num2);
+            num2 = Math.min(num1, num2);
+            num1 = temp;
+            result = num1 - num2;
+            problemEl.textContent = `${num1} - ${num2} =`;
+            
+        } else if (operator === '×') {
+            num1 = Math.floor(Math.random() * 90) + 10;
+            num2 = Math.floor(Math.random() * 15) + 2;  
+            result = num1 * num2;
+            problemEl.textContent = `${num1} × ${num2} =`;
+            
+        } else if (operator === '÷') {
+            let quotient = Math.floor(Math.random() * 90) + 10;
+            num2 = Math.floor(Math.random() * 15) + 2;
+            num1 = quotient * num2;
+            result = quotient;
+            problemEl.textContent = `${num1} ÷ ${num2} =`;
+            
+        } else if (operator === '^') {
+            num1 = Math.floor(Math.random() * 9) + 2; 
+            num2 = Math.random() > 0.5 ? 2 : 3; 
+            result = Math.pow(num1, num2);
+            problemEl.textContent = `${num1} ^ ${num2} =`;
+            
+        } else if (operator === '√') {
+            const MIN_ROOT = 4;
+            const MAX_ROOT = 31; 
+            const range = MAX_ROOT - MIN_ROOT + 1;
+
+            result = Math.floor(Math.random() * range) + MIN_ROOT; 
+            num1 = result * result;
+            problemEl.textContent = `√${num1} =`; 
+        }
+
+        currentCorrectAnswer = result;
+        answerInput.value = ''; 
+        messageEl.textContent = ''; 
+    }
+
+    // --- 정답 확인 및 종료 ---
+
+    function checkAnswer(event) {
+        if (event.key === 'Enter') {
+            clearInterval(questionTimerInterval); 
+            if (flashInterval) {
+                clearInterval(flashInterval);
+                document.body.classList.remove('flash-warning');
+            }
+            qTimerEl.style.backgroundColor = 'var(--warning-color)'; /* CSS 변수 사용 */
+            
+            const userAnswer = parseInt(answerInput.value);
+
+            if (isNaN(userAnswer)) {
+                messageEl.textContent = "숫자를 입력하세요!";
+                messageEl.className = 'wrong';
+                setTimeout(() => {
+                    nextQuestion(); 
+                }, 500);
+                return;
+            }
+
+            if (userAnswer === currentCorrectAnswer) {
+                correctAnswers++;
+                messageEl.textContent = "⭐️ 정답!";
+                messageEl.className = 'correct';
+            } else {
+                messageEl.textContent = `❌ 오답! (정답: ${currentCorrectAnswer})`;
+                messageEl.className = 'wrong';
+            }
+            
+            correctCountEl.textContent = `정답: ${correctAnswers}`;
+            
+            answerInput.disabled = true; 
+            setTimeout(() => {
+                answerInput.disabled = false;
+                nextQuestion();
+                answerInput.focus();
+            }, 800);
+        }
+    }
+
+    function endGame() {
+        if (questionTimerInterval) {
+            clearInterval(questionTimerInterval);
+        }
+        if (flashInterval) { 
+            clearInterval(flashInterval);
+            document.body.classList.remove('flash-warning');
+        }
+        answerInput.disabled = true;
+        
+        const percentage = Math.round((correctAnswers / TOTAL_QUESTIONS) * 100);
+
+        problemEl.textContent = "도전 완료!";
+        messageEl.textContent = `최종 정답률: ${percentage}% (${correctAnswers} / ${TOTAL_QUESTIONS} 문제)`;
+        messageEl.style.color = percentage >= 80 ? 'var(--info-color)' : 'var(--danger-color)';
+        
+        const currentHighScore = parseInt(localStorage.getItem(HIGH_SCORE_KEY) || 0);
+        if (percentage > currentHighScore) {
+            localStorage.setItem(HIGH_SCORE_KEY, percentage);
+            highScoreEl.textContent = `🎉 최고 기록: ${percentage}%`;
+            messageEl.textContent += " (NEW RECORD!)";
+        }
+        
+        startBtn.textContent = "다시 도전하기";
+        startBtn.style.display = 'block'; 
+        qTimerEl.textContent = `제한: ${TIME_LIMIT_PER_Q}초`; 
+    }
+
+    // 이벤트 리스너 연결
+    startBtn.addEventListener('click', startGame);
+    answerInput.addEventListener('keypress', checkAnswer);
+
+</script>
+
+</body>
+</html>
